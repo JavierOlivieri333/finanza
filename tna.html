@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Financiera TNA/TAE</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+            --input-bg: #ffffff;
+            --breakdown-border: #f1f5f9;
+        }
+
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #34d399;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+            --input-bg: #1e293b;
+            --breakdown-border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 950px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+
+        /* Theme Toggle - Top Right */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            background: var(--card-bg);
+            padding: 8px 12px;
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .theme-toggle label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: 0.3s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #1e293b;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #cbd5e1;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            background-color: #ffffff;
+        }
+
+        .theme-icon {
+            font-size: 1rem;
+        }
+
+        /* Input Section */
+        .input-section {
+            padding: 2rem;
+            flex: 1;
+            border-right: 1px solid var(--border);
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 0.65rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.2s;
+            flex: 1;
+            justify-content: center;
+            font-size: 0.85rem;
+            min-width: 80px;
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        .radio-option:hover {
+            background-color: var(--border);
+        }
+
+        .radio-option.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .radio-option input {
+            display: none;
+        }
+
+        .rates-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .rate-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rate-input-group label {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-bottom: 0.3rem;
+        }
+
+        .rate-input-group input {
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.3rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.9rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Results Section */
+        .results-section {
+            padding: 1.5rem;
+            flex: 1.2;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .results-header h2 {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            margin-bottom: 0.3rem;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+
+        .result-card h3 {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .result-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--secondary);
+            text-align: center;
+            margin-bottom: 0.75rem;
+            word-break: break-word;
+        }
+
+        .result-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .breakdown-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid var(--breakdown-border);
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .breakdown-amount {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: right;
+        }
+
+        .breakdown-amount.positive {
+            color: var(--secondary);
+        }
+
+        .breakdown-amount.total {
+            color: var(--primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-box h3 {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .summary-values {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .summary-value-item {
+            background: rgba(255,255,255,0.15);
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+
+        .summary-value-item .label {
+            font-size: 0.6rem;
+            opacity: 0.8;
+            margin-bottom: 0.2rem;
+        }
+
+        .summary-value-item .value {
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .summary-value-item .interest {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-top: 0.15rem;
+        }
+
+        @media (max-width: 700px) {
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                padding: 6px 10px;
+            }
+            .rates-container {
+                grid-template-columns: 1fr;
+            }
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+            .summary-values {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 450px) {
+            .summary-values {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <!-- Input Section -->
+    <div class="input-section">
+        <h1>Calculadora de Intereses TNA/TAE</h1>
+        
+        <div class="form-group">
+            <label for="amount">Capital Inicial ($)</label>
+            <input type="number" id="amount" placeholder="Ej. 10000" min="0" step="0.01">
+        </div>
+
+        <div class="form-group">
+            <label>Tipo de Tasa</label>
+            <div class="radio-group">
+                <label class="radio-option selected" id="opt-tna">
+                    <input type="radio" name="rateType" value="TNA" checked> TNA
+                </label>
+                <label class="radio-option" id="opt-tae">
+                    <input type="radio" name="rateType" value="TAE"> TAE
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Periodicidad de la Tasa</label>
+            <div class="radio-group">
+                <label class="radio-option selected" id="opt-annual">
+                    <input type="radio" name="frequency" value="annual" checked> Anual
+                </label>
+                <!-- <label class="radio-option" id="opt-monthly">
+                    <input type="radio" name="frequency" value="monthly"> Mensual
+                </label>
+                <label class="radio-option" id="opt-daily">
+                    <input type="radio" name="frequency" value="daily"> Diaria
+                </label> -->
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Tasas (%)</label>
+            <div class="rates-container">
+                <div class="rate-input-group">
+                    <label>Tasa 1</label>
+                    <input type="number" id="rate1" placeholder="%" min="0" step="0.01">
+                </div>
+                <div class="rate-input-group">
+                    <label>Tasa 2</label>
+                    <input type="number" id="rate2" placeholder="%" min="0" step="0.01">
+                </div>
+                <div class="rate-input-group">
+                    <label>Tasa 3</label>
+                    <input type="number" id="rate3" placeholder="%" min="0" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <button onclick="calculate()">Calcular Rendimientos</button>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section">
+        <div class="results-header">
+            <h2>Resultados por Período</h2>
+        </div>
+
+        <div id="results-container" class="hidden">
+            
+            <!-- Summary Box -->
+            <!-- <div class="summary-box">
+                <h3>Total en Cuenta (Capital + Interés)</h3>
+                <div class="summary-values">
+                    <div class="summary-value-item">
+                        <div class="label">Diario</div>
+                        <div class="value" id="summary-1d-total">$0</div>
+                        <div class="interest" id="summary-1d-int">+int $0</div>
+                    </div>
+                    <div class="summary-value-item">
+                        <div class="label">1 Mes</div>
+                        <div class="value" id="summary-1m-total">$0</div>
+                        <div class="interest" id="summary-1m-int">+int $0</div>
+                    </div>
+                    <div class="summary-value-item">
+                        <div class="label">6 Meses</div>
+                        <div class="value" id="summary-6m-total">$0</div>
+                        <div class="interest" id="summary-6m-int">+int $0</div>
+                    </div>
+                    <div class="summary-value-item">
+                        <div class="label">1 Año</div>
+                        <div class="value" id="summary-1y-total">$0</div>
+                        <div class="interest" id="summary-1y-int">+int $0</div>
+                    </div>
+                </div>
+            </div> -->
+
+            <div class="result-grid">
+                <!-- Tasa 1 Result Card -->
+                <div class="result-card">
+                    <h3>Tasa 1</h3>
+                    <div class="result-value" id="rate1-value">0%</div>
+                    <div class="result-subtitle">TNA / TAE Anual</div>
+                    <div class="breakdown-list">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Diario</span>
+                            <span class="breakdown-amount total" id="rate1-1d-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate1-1d-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">1 Mes</span>
+                            <span class="breakdown-amount total" id="rate1-1m-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate1-1m-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">6 Meses</span>
+                            <span class="breakdown-amount total" id="rate1-6m-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate1-6m-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">1 Año</span>
+                            <span class="breakdown-amount total" id="rate1-1y-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate1-1y-int">+$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasa 2 Result Card -->
+                <div class="result-card">
+                    <h3>Tasa 2</h3>
+                    <div class="result-value" id="rate2-value">0%</div>
+                    <div class="result-subtitle">TNA / TAE Anual</div>
+                    <div class="breakdown-list">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Diario</span>
+                            <span class="breakdown-amount total" id="rate2-1d-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate2-1d-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">1 Mes</span>
+                            <span class="breakdown-amount total" id="rate2-1m-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate2-1m-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">6 Meses</span>
+                            <span class="breakdown-amount total" id="rate2-6m-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate2-6m-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">1 Año</span>
+                            <span class="breakdown-amount total" id="rate2-1y-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate2-1y-int">+$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasa 3 Result Card -->
+                <div class="result-card">
+                    <h3>Tasa 3</h3>
+                    <div class="result-value" id="rate3-value">0%</div>
+                    <div class="result-subtitle">TNA / TAE Anual</div>
+                    <div class="breakdown-list">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Diario</span>
+                            <span class="breakdown-amount total" id="rate3-1d-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate3-1d-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">1 Mes</span>
+                            <span class="breakdown-amount total" id="rate3-1m-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate3-1m-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">6 Meses</span>
+                            <span class="breakdown-amount total" id="rate3-6m-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate3-6m-int">+$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">1 Año</span>
+                            <span class="breakdown-amount total" id="rate3-1y-total">$0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Interés</span>
+                            <span class="breakdown-amount positive" id="rate3-1y-int">+$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <div id="empty-state" class="empty-state">
+            Ingresa el capital y al menos una tasa para ver los resultados del interés generado.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Theme Toggle Logic - Default to Dark Mode
+    const themeSwitch = document.getElementById('theme-switch');
+    const htmlElement = document.documentElement;
+    
+    function setDarkMode() {
+        htmlElement.setAttribute('data-theme', 'dark');
+        themeSwitch.checked = true;
+    }
+    
+    function setLightMode() {
+        htmlElement.removeAttribute('data-theme');
+        themeSwitch.checked = false;
+    }
+    
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        setLightMode();
+    } else {
+        setDarkMode();
+    }
+
+    themeSwitch.addEventListener('change', function() {
+        if (this.checked) {
+            setDarkMode();
+            localStorage.setItem('theme', 'dark');
+        } else {
+            setLightMode();
+            localStorage.setItem('theme', 'light');
+        }
+    });
+
+    // UI Logic for Radio Buttons styling
+    document.querySelectorAll('.radio-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const groupName = this.querySelector('input').name;
+            document.querySelectorAll(`input[name="${groupName}"]`).forEach(input => {
+                input.parentElement.classList.remove('selected');
+            });
+            this.classList.add('selected');
+            this.querySelector('input').checked = true;
+        });
+    });
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('es-AR', { 
+            style: 'currency', 
+            currency: 'ARS',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    }
+
+    function calculateForRate(amount, rateInput, rateType, frequency) {
+        let tnaAnnual = 0;
+        let taeAnnual = 0;
+
+        // Convert input rate to annual TNA and TAE
+        if (rateType === 'TNA') {
+            if (frequency === 'annual') {
+                tnaAnnual = rateInput;
+            } else if (frequency === 'monthly') {
+                tnaAnnual = rateInput * 12;
+            } else if (frequency === 'daily') {
+                tnaAnnual = rateInput * 365;
+            }
+            // TAE from TNA (compound)
+            taeAnnual = (Math.pow(1 + (tnaAnnual / 100 / 365), 365) - 1) * 100;
+        } else { // TAE
+            taeAnnual = rateInput;
+            if (frequency === 'monthly') {
+                taeAnnual = (Math.pow(1 + (rateInput / 100), 12) - 1) * 100;
+            } else if (frequency === 'daily') {
+                taeAnnual = (Math.pow(1 + (rateInput / 100), 365) - 1) * 100;
+            }
+            // TNA from TAE
+            tnaAnnual = ((Math.pow(1 + (taeAnnual / 100), 1/365) - 1) * 365) * 100;
+        }
+
+        // TNA Interest Calculation: importe × (tasa / 100) / 365
+        const tnaDailyRate = tnaAnnual / 100 / 365;
+        
+        // Interest amounts using TNA formula (simple interest)
+        const interest1Day = amount * tnaDailyRate;
+        const interest1Month = amount * tnaDailyRate * 30;
+        const interest6Months = amount * tnaDailyRate * 180;
+        const interest1Year = amount * tnaDailyRate * 365;
+
+        // Total amounts (capital + interest)
+        const total1Day = amount + interest1Day;
+        const total1Month = amount + interest1Month;
+        const total6Months = amount + interest6Months;
+        const total1Year = amount + interest1Year;
+
+        return {
+            tnaAnnual,
+            taeAnnual,
+            interest1Day,
+            interest1Month,
+            interest6Months,
+            interest1Year,
+            total1Day,
+            total1Month,
+            total6Months,
+            total1Year
+        };
+    }
+
+    function calculate() {
+        const amount = parseFloat(document.getElementById('amount').value);
+        const rate1 = parseFloat(document.getElementById('rate1').value);
+        const rate2 = parseFloat(document.getElementById('rate2').value);
+        const rate3 = parseFloat(document.getElementById('rate3').value);
+        const rateType = document.querySelector('input[name="rateType"]:checked').value;
+        const frequency = document.querySelector('input[name="frequency"]:checked').value;
+
+        if (isNaN(amount) || amount <= 0) {
+            alert("Por favor ingrese un capital válido mayor a 0.");
+            return;
+        }
+
+        if (isNaN(rate1) && isNaN(rate2) && isNaN(rate3)) {
+            alert("Por favor ingrese al menos una tasa.");
+            return;
+        }
+
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('results-container').classList.remove('hidden');
+
+        let total1D = 0, total1M = 0, total6M = 0, total1Y = 0;
+        let int1D = 0, int1M = 0, int6M = 0, int1Y = 0;
+
+        [rate1, rate2, rate3].forEach((rate, index) => {
+            if (!isNaN(rate) && rate >= 0) {
+                const result = calculateForRate(amount, rate, rateType, frequency);
+                
+                total1D += result.total1Day;
+                total1M += result.total1Month;
+                total6M += result.total6Months;
+                total1Y += result.total1Year;
+
+                int1D += result.interest1Day;
+                int1M += result.interest1Month;
+                int6M += result.interest6Months;
+                int1Y += result.interest1Year;
+
+                document.getElementById(`rate${index + 1}-value`).textContent = result.taeAnnual.toFixed(2) + '%';
+                
+                document.getElementById(`rate${index + 1}-1d-total`).textContent = formatCurrency(result.total1Day);
+                document.getElementById(`rate${index + 1}-1d-int`).textContent = '+' + formatCurrency(result.interest1Day);
+                
+                document.getElementById(`rate${index + 1}-1m-total`).textContent = formatCurrency(result.total1Month);
+                document.getElementById(`rate${index + 1}-1m-int`).textContent = '+' + formatCurrency(result.interest1Month);
+                
+                document.getElementById(`rate${index + 1}-6m-total`).textContent = formatCurrency(result.total6Months);
+                document.getElementById(`rate${index + 1}-6m-int`).textContent = '+' + formatCurrency(result.interest6Months);
+                
+                document.getElementById(`rate${index + 1}-1y-total`).textContent = formatCurrency(result.total1Year);
+                document.getElementById(`rate${index + 1}-1y-int`).textContent = '+' + formatCurrency(result.interest1Year);
+            } else {
+                document.getElementById(`rate${index + 1}-value`).textContent = '-';
+                document.getElementById(`rate${index + 1}-1d-total`).textContent = '-';
+                document.getElementById(`rate${index + 1}-1d-int`).textContent = '-';
+                document.getElementById(`rate${index + 1}-1m-total`).textContent = '-';
+                document.getElementById(`rate${index + 1}-1m-int`).textContent = '-';
+                document.getElementById(`rate${index + 1}-6m-total`).textContent = '-';
+                document.getElementById(`rate${index + 1}-6m-int`).textContent = '-';
+                document.getElementById(`rate${index + 1}-1y-total`).textContent = '-';
+                document.getElementById(`rate${index + 1}-1y-int`).textContent = '-';
+            }
+        });
+
+        document.getElementById('summary-1d-total').textContent = formatCurrency(total1D);
+        document.getElementById('summary-1d-int').textContent = '+int ' + formatCurrency(int1D);
+        
+        document.getElementById('summary-1m-total').textContent = formatCurrency(total1M);
+        document.getElementById('summary-1m-int').textContent = '+int ' + formatCurrency(int1M);
+        
+        document.getElementById('summary-6m-total').textContent = formatCurrency(total6M);
+        document.getElementById('summary-6m-int').textContent = '+int ' + formatCurrency(int6M);
+        
+        document.getElementById('summary-1y-total').textContent = formatCurrency(total1Y);
+        document.getElementById('summary-1y-int').textContent = '+int ' + formatCurrency(int1Y);
+    }
+</script>
+
+</body>
+</html>
