@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Capital Requerido</title>
+    
+    <!-- 
+    ================================================================
+    ARCHIVO: styles.css (Estilos CSS)
+    ================================================================
+    -->
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary-color: #10b981;
+            --primary-hover: #059669;
+            --text-color: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: rgba(148, 163, 184, 0.2);
+            --input-bg: rgba(15, 23, 42, 0.6);
+            --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #34d399, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .currency-symbol, .percent-symbol {
+            position: absolute;
+            color: var(--text-muted);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        .currency-symbol { left: 16px; }
+        .percent-symbol { right: 16px; }
+
+        input[type="number"] {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
+
+        input.has-left-icon { padding-left: 36px; }
+        input.has-right-icon { padding-right: 36px; }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-card {
+            margin-top: 32px;
+            padding: 24px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 16px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            display: none;
+        }
+
+        .result-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+
+        .result-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .result-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 0.8rem;
+            margin-top: 6px;
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px;
+            }
+            .result-value {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Calculadora de Inversión</h1>
+            <p class="subtitle">Descubre el capital necesario para tu meta diaria</p>
+        </header>
+
+        <form id="calcForm">
+            <div class="form-group">
+                <label for="dailyYield">Rendimiento Diario Deseado</label>
+                <div class="input-wrapper">
+                    <span class="currency-symbol">$</span>
+                    <input type="number" id="dailyYield" class="has-left-icon" placeholder="Ej. 50" step="0.01" min="0">
+                </div>
+                <div class="error-msg" id="yieldError">Por favor ingresa un monto válido.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="interestRate">Tasa de Interés Anual (%)</label>
+                <div class="input-wrapper">
+                    <input type="number" id="interestRate" class="has-right-icon" placeholder="Ej. 12" step="0.01" min="0.01">
+                    <span class="percent-symbol">%</span>
+                </div>
+                <div class="error-msg" id="rateError">La tasa debe ser mayor a 0.</div>
+            </div>
+
+            <button type="button" id="calculateBtn">Calcular Capital</button>
+        </form>
+
+        <div id="resultCard" class="result-card">
+            <div class="result-label">Capital Requerido en Banco</div>
+            <div class="result-value" id="resultValue">$0.00</div>
+            <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+                Basado en una tasa anual del <span id="resultRate"></span>%
+            </p>
+        </div>
+    </div>
+
+    <!-- 
+    ================================================================
+    ARCHIVO: script.js (Lógica JavaScript)
+    ================================================================
+    -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calculateBtn = document.getElementById('calculateBtn');
+            const dailyYieldInput = document.getElementById('dailyYield');
+            const interestRateInput = document.getElementById('interestRate');
+            const resultCard = document.getElementById('resultCard');
+            const resultValue = document.getElementById('resultValue');
+            const resultRate = document.getElementById('resultRate');
+            const yieldError = document.getElementById('yieldError');
+            const rateError = document.getElementById('rateError');
+
+            const currencyFormatter = new Intl.NumberFormat('es-MX', {
+                style: 'currency',
+                currency: 'MXN',
+                minimumFractionDigits: 2
+            });
+
+            calculateBtn.addEventListener('click', function() {
+                yieldError.style.display = 'none';
+                rateError.style.display = 'none';
+                dailyYieldInput.style.borderColor = 'var(--border-color)';
+                interestRateInput.style.borderColor = 'var(--border-color)';
+
+                const dailyYield = parseFloat(dailyYieldInput.value);
+                const annualRate = parseFloat(interestRateInput.value);
+
+                let isValid = true;
+
+                if (!dailyYield || dailyYield <= 0 || isNaN(dailyYield)) {
+                    yieldError.style.display = 'block';
+                    dailyYieldInput.style.borderColor = '#ef4444';
+                    isValid = false;
+                }
+
+                if (!annualRate || annualRate <= 0 || isNaN(annualRate)) {
+                    rateError.style.display = 'block';
+                    interestRateInput.style.borderColor = '#ef4444';
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    return;
+                }
+
+                const dailyRateDecimal = (annualRate / 100) / 365;
+                const requiredCapital = dailyYield / dailyRateDecimal;
+
+                resultCard.classList.remove('visible');
+                
+                setTimeout(function() {
+                    resultValue.textContent = currencyFormatter.format(requiredCapital);
+                    resultRate.textContent = annualRate.toFixed(2);
+                    resultCard.classList.add('visible');
+                }, 100);
+            });
+
+            dailyYieldInput.addEventListener('input', function() {
+                if (dailyYieldInput.value) {
+                    yieldError.style.display = 'none';
+                    dailyYieldInput.style.borderColor = 'var(--border-color)';
+                }
+            });
+
+            interestRateInput.addEventListener('input', function() {
+                if (interestRateInput.value) {
+                    rateError.style.display = 'none';
+                    interestRateInput.style.borderColor = 'var(--border-color)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
